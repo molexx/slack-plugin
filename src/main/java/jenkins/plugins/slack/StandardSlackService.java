@@ -101,7 +101,7 @@ public class StandardSlackService implements SlackService {
             }
         }
 
-        if (result == true) {
+        if (result) {
             logger.info("Posting success, checking for files to upload: " + filesToUpload);
             if (filesToUpload != null && filesToUpload.size() > 0) {
                 uploadFiles(filesToUpload, uploadFilesUserToken);

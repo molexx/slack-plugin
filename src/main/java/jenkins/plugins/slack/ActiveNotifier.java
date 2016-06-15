@@ -206,38 +206,32 @@ public class ActiveNotifier implements FineGrainedNotifier {
     }
 
     private List<File> getFilesToUpload(AbstractBuild r) {
-        Result result = r.getResult();
+        final String glob = notifier.getUploadFilesPattern();
+        logger.info("getFilesToUpload(): glob: " + glob);
+        if (glob != null && glob.length() > 0) {
+            final List<File> files = new ArrayList<File>();
+            DirScanner dc = new DirScanner.Glob(glob, null);
+            FileVisitor fv = new FileVisitor() {
+               @Override
+               public void visit(File f, String relativePath) {
+                   files.add(f);
+               }
+            };
 
-        logger.info("getFilesToUpload(): called, result: " + result);
-        
-        if (result == Result.SUCCESS) {
-            final String glob = notifier.getUploadFilesPattern();
-            logger.info("getFilesToUpload(): glob: " + glob);
-            if (glob != null && glob.length() > 0) {
-                final List<File> files = new ArrayList<File>();
-                DirScanner dc = new DirScanner.Glob(glob, null);
-                FileVisitor fv = new FileVisitor() {
-                   @Override
-                   public void visit(File f, String relativePath) {
-                       files.add(f);
-                   }
-                };
-                
-                try {
-                    FilePath workspaceFP = r.getWorkspace();
-                    File f = new File(workspaceFP.toURI().getPath());
-                    logger.info("getFilesToUpload(): scanning dir: " + f);
-                    dc.scan(f, fv);
-                    
-                    logger.info("getFilesToUpload(): files.size(): " + files.size());
-                } catch (Throwable t) {
-                    logger.severe("Could not scan files matching glob '" + glob + "'" + t);
-                }
-                return(files);
+            try {
+                FilePath workspaceFP = r.getWorkspace();
+                File f = new File(workspaceFP.toURI().getPath());
+                logger.info("getFilesToUpload(): scanning dir: " + f);
+                dc.scan(f, fv);
+
+                logger.info("getFilesToUpload(): files.size(): " + files.size());
+            } catch (Throwable t) {
+                logger.severe("Could not scan files matching glob '" + glob + "'" + t);
             }
+            return files;
         }
 
-        return(null);
+        return null;
     }
 
     String getBuildStatusMessage(AbstractBuild r, boolean includeTestSummary, boolean includeCustomMessage) {
